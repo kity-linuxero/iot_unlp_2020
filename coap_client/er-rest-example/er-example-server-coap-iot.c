@@ -65,7 +65,8 @@
  */
 extern resource_t
   res_hello,
-  res_position;
+  res_position,
+  res_temp;
 
 /*
 extern resource_t res_battery;
@@ -79,6 +80,11 @@ extern resource_t res_radio;
 extern resource_t res_sht11;
 #endif
 */
+/*
+#if PLATFORM_HAS_TEMPERATURE
+#include "dev/temperature-sensor.h"
+extern resource_t res_temperature;
+#endif*/
 
 PROCESS(er_example_server, "Erbium Example Server");
 AUTOSTART_PROCESSES(&er_example_server);
@@ -102,6 +108,16 @@ PROCESS_THREAD(er_example_server, ev, data)
 
   rest_activate_resource(&res_hello, "test/hello");
   rest_activate_resource(&res_position, "position");
+  rest_activate_resource(&res_temp, "sensors/temp");
+  
+  /*
+   * NO ME LO TOMA. NO SÉ COMO HACER PARA AGREGARLE UN SENSOR DE TEMP
+   * 
+  #if PLATFORM_HAS_TEMPERATURE
+  rest_activate_resource(&res_temperature, "sensors/temperature");  
+  SENSORS_ACTIVATE(temperature_sensor);  
+  #endif
+  */
 
   PROCESS_END();
 }
