@@ -1,4 +1,6 @@
-## Cliente COAP
+# Cliente COAP
+
+#### Internet de Las Cosas, Facultad de Informática | UNLP
 
 ### Requisitos
 
@@ -11,17 +13,17 @@ sudo pip install CoAPthon ipaddress influxdb
 
 3. Copiar `er-example-server-coap-iot.c` en `/home/user/contiki/examples/er-rest-example/` de Contiki
 
-4. Copiar `res-position.c` en `/home/user/contiki/examples/er-rest-example/resources/`
+4. Copiar `res-position.c` y `res_temp.c`en `/home/user/contiki/examples/er-rest-example/resources/`
 
-5. Levantar la simulación 
+5. Levantar la simulación `iot_entrega_coap_influx.csc` 
 
 6. Crear el tunel con `make connect-router-cooja`
 
 
-### Uso
+## Uso
 
-En esta entrega solo están implementados los mensajes `test/hello` y `position`.
-Position devolverá valores aleatorios de lat (`-180 <= x <= 180`), lon (`-90 <= y <= 90`) altura (0 a 100).
+En esta entrega solo están implementados los mensajes `test/hello`, `position` y `sensors/temp`.
+Position devolverá valores aleatorios de lat (`-180≤X≤180`), lon (`-90≤Y≤90`) altura (`0≤Z≤100`). Temp devolverá resultados entre `0≤x≤100`. No logré hacer leer el sensor de temperatura de la Z1. No sé si porque no lo trae o que, probé con el example `res-temperature.c` de Cooja pero no devolvía nada.
 
 ```bash
 user@instant-contiki:~$ ./iot-coap.py [host] [recurso] [-c COUNT] [-i INTERVAL] [-v Verbose ] [-I INFLUX] (Aun no implementado) [--version]
@@ -33,7 +35,7 @@ user@instant-contiki:~$ ./iot-coap.py fd00::c30c:0:0:2 test/hello
 fd00::c30c:0:0:2: Hello World!
 ```
 
-### Ejemplo position verbose
+### Ejemplos verbose
 La opcion -v devolverá mas datos que solo el payload
 ```bash
 user@instant-contiki:~/iot$ ./iot-coap.py fd00::c30c:0:0:2 position -v
@@ -45,6 +47,21 @@ Code: CONTENT
 Token: None
 Payload: 
 27,62,57
+```
+Consulta de temperatura de mota con ip `fd00::c30c:0:0:2`
+```bash
+$ ./iot-coap.py fd00::c30c:0:0:2 sensors/temp
+fd00::c30c:0:0:2: 22
+
+$ ./iot-coap.py fd00::c30c:0:0:2 sensors/temp --verbose
+fd00::c30c:0:0:2: Source: ('fd00::c30c:0:0:2', 5683)
+Destination: None
+Type: ACK
+MID: 55393
+Code: CONTENT
+Token: None
+Payload: 
+70
 ```
 
 ### Intervalos de tiempo
@@ -96,9 +113,31 @@ optional arguments:
   -v, --verbose         increase output verbosity
   -I INFLUX, --influx INFLUX
                         save to influxdb host. Set an ipv4 address
-  --version             show program's version number and exit
+  --version             show program version number and exit
 ```
 
-### Conexión con base de datos
+### Conexión con base de datos InfluxDB
 
-No implementada en esta versión. Se hará para la próxima entrega.
+Se espera una dirección IPv4 la cual debe ser accesible a `InfluxDB` mediante el puerto por defecto `8086` y la base `mydb`. Esto último se hizo con la base de datos _"fija"_ debido a la consigna de la práctica que decía:
+>Escribir un programa que lea mediante su cliente COAP el valor del sensor de temperatura de las mota cada
+10 segundos y lo inserte en la **base de datos creada anteriormente**.
+
+De todas formas no sería muy dificil agregar el nombre de la base de datos como un parámetro.
+
+El siguiente ejemplo muestra como grabar en la base InfluxDB `mydb` en el servidor `192.168.88.10` en la Measuremen `temp` de dos motas con intervalos de 10 segundos.
+
+Para ayudar al debug y comprensión de lo que el srcipt hace, se deja la url hacia donde hace el write como también la respuesta del servidor. En este caso, el `204` indica éxito al insertar los datos.
+
+```bash
+$ ./iot-coap.py fd00::c30c:0:0:2 -c 2 sensors/temp -i 10 -I 192.168.88.10
+http://192.168.88.10:8086/write?db=mydb temp,host=fd00::c30c:0:0:2 temp=68
+<Response [204]>
+http://192.168.88.10:8086/write?db=mydb temp,host=fd00::c30c:0:0:3 temp=70
+<Response [204]>
+http://192.168.88.10:8086/write?db=mydb temp,host=fd00::c30c:0:0:2 temp=84
+<Response [204]>
+http://192.168.88.10:8086/write?db=mydb temp,host=fd00::c30c:0:0:3 temp=88
+<Response [204]>
+^CInterrupted by keyboard!
+```
+

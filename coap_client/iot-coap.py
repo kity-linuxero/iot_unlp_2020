@@ -10,13 +10,16 @@ INFLUX_PORT = '8086'
 DB= "mydb"
 
 def store_info_influx (host, path, in_influx, value):
+  sensor = path.split('/')[1]
   headers = {'content-type' : 'application/json'}
   url_string = 'http://'+in_influx+':'+INFLUX_PORT+'/write?db='+DB
-  sensor = path.split('/')[1]
   data_string = sensor+',host='+str(host)+' '+sensor+'='+str(value)
   print (url_string+' '+data_string)
   r = requests.post(url_string,data=data_string)
-  print(r)
+  if r.status_code != 204:
+    print ("El valor no puede insertarse en la base de datos. Error "+str(r.status_code))
+  else:
+    print(r)
 
 def coapmsg (host, path, is_verbose, in_influx):
   try:
@@ -38,10 +41,7 @@ def coapmsg (host, path, is_verbose, in_influx):
     
 
 def clientCoap(hosts, path, interval, in_influx, is_verbose ):
-#Default coap port
-  #port = 5683
   path = args.path
-  #host = 'fd00::c30c:0:0:2'
   if interval:
     try:
       sleeping_time = int(interval)
@@ -56,8 +56,7 @@ def clientCoap(hosts, path, interval, in_influx, is_verbose ):
       for h in hosts:
         coapmsg(h, path, is_verbose, in_influx)
     except Exception as err:
-      #print ("Exiting with error: "+str(err))
-      print("pindonga")
+      print ("Exiting with error.")
 
 # Parseo de arguments
 parser = argparse.ArgumentParser()
@@ -67,7 +66,7 @@ parser.add_argument("-c", "--count", help="cont of motes. IP of motes must be co
 parser.add_argument("-i", "--interval", help="interval in seconds to repeat query", type=int, action="store")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 parser.add_argument("-I", "--influx", help="save to influxdb host. Set an ipv4 address", action="store")
-parser.add_argument('--version', action='version', version='%(prog)s 0.2.0')
+parser.add_argument('--version', action='version', version='%(prog)s 0.2.1')
 args = parser.parse_args()
 
 # Validaciones de args
@@ -97,6 +96,5 @@ hosts = []
 for x in range(0, cant):
   t = ipaddress.IPv6Address(unicode(args.host))+x-1
   hosts.append(t+1)
-  #print hosts[x]
-#print hosts
+
 clientCoap(hosts, args.path, args.interval, args.influx, args.verbose)
