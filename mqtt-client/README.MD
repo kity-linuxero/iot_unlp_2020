@@ -71,8 +71,7 @@ $ mosquitto_sub -h 192.168.88.25 -t mota1/temp
 ```
 
 ### Screenshot
-
-![](screenshot.png)
+![](screenshot2.png)
 
 
 
